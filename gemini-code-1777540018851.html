@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>星野逆袭：改命时刻</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body, html { margin: 0; padding: 0; height: 100%; background: #050505; color: #fff; overflow: hidden; font-family: sans-serif; -webkit-user-select: none; }
+        .scene { display: none; width: 100%; height: 100%; position: absolute; top: 0; left: 0; flex-direction: column; background-size: cover; background-position: center; transition: all 0.4s ease; }
+        .active-scene { display: flex !important; animation: fadeIn 0.5s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: scale(1.05); } to { opacity: 1; transform: scale(1); } }
+        .glass-panel { background: rgba(15, 15, 15, 0.85); backdrop-filter: blur(12px); border: 1px solid rgba(255, 215, 0, 0.4); border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.9); }
+        .btn-gold { background: linear-gradient(135deg, #fbbf24 0%, #d97706 100%); color: #000; font-weight: bold; transition: all 0.15s ease; box-shadow: 0 6px 20px rgba(217, 119, 6, 0.5); border: 1px solid #fff3c4; }
+        .btn-gold:active { transform: translateY(4px) scale(0.96); }
+        .progress-bar { height: 8px; background: #fbbf24; width: 100%; transition: width 0.1s linear; }
+        .danger-pulse { animation: pulseRed 0.5s infinite alternate; }
+        @keyframes pulseRed { from { background-color: #ef4444; } to { background-color: #991b1b; } }
+        .shake-anim { animation: shake 0.4s both; border: 2px solid #ef4444 !important; }
+        @keyframes shake { 10%, 90% { transform: translate3d(-4px, 0, 0); } 20%, 80% { transform: translate3d(8px, 0, 0); } 30%, 50%, 70% { transform: translate3d(-12px, 0, 0); } 40%, 60% { transform: translate3d(12px, 0, 0); } }
+        .success-flash { animation: greenFlash 0.5s; border: 2px solid #22c55e !important; }
+        @keyframes greenFlash { 0% { background-color: #22c55e; } 100% { background-color: transparent; } }
+        .slot-window { height: 85px; width: 85px; overflow: hidden; background: #111; border: 2px solid #333; border-radius: 12px; position: relative; }
+        .slot-window.winner { border-color: #fbbf24; box-shadow: 0 0 25px #fbbf24; }
+        .gacha-strip { display: flex; flex-direction: column; width: 100%; transform: translateY(0); }
+        .gacha-item { height: 85px; display: flex; align-items: center; justify-content: center; font-size: 2.8rem; }
+        .spinning { animation: spin 0.12s linear infinite; }
+        @keyframes spin { from { transform: translateY(0); } to { transform: translateY(-255px); } }
+        .modal { display: none; position: fixed; z-index: 100; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.92); justify-content: center; align-items: center; }
+        .modal-show { display: flex; }
+    </style>
+</head>
+<body>
+
+    <div id="scene-story" class="scene active-scene" style="background-image: linear-gradient(to top, #000, transparent), url('https://placehold.co/720x1280/2c2c2c/666?text=Background')">
+        <video id="story-bg-video" autoplay muted playsinline style="display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: 1;"></video>
+        <div id="story-gradient-overlay" style="display: none; position: absolute; bottom: 0; left: 0; width: 100%; height: 70%; background: linear-gradient(to top, rgba(0,0,0,0.9), transparent); z-index: 2; pointer-events: none;"></div>
+        <div class="mt-auto p-6 w-full" style="position: relative; z-index: 10;">
+            <h2 id="story-title" class="text-yellow-400 font-extrabold text-2xl mb-3 border-l-4 border-yellow-400 pl-3">加载中...</h2>
+            <div class="glass-panel p-6 mb-8">
+                <p id="story-dialog" class="text-lg leading-relaxed text-gray-100">加载剧情...</p>
+            </div>
+            <div class="flex space-x-4">
+                <button onclick="alert('你难道要穷一辈子吗？')" class="w-1/3 py-4 rounded-xl font-bold bg-gray-800 border border-gray-600">认命</button>
+                <button id="story-btn" onclick="openQuiz()" class="flex-1 py-4 rounded-xl text-xl btn-gold">开启挑战</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="scene-quiz" class="scene" style="background-image: radial-gradient(circle at top, #2a2a35, #000);">
+        <div id="timer" class="progress-bar"></div>
+        <div class="p-6 flex flex-col h-full justify-center">
+            <div class="flex justify-between items-center mb-6">
+                <span id="quiz-level" class="text-yellow-500 border-2 border-yellow-500 px-4 py-1 rounded-full font-bold">挑战</span>
+                <div class="flex space-x-2" id="step-indicators">
+                    <div class="w-3 h-3 rounded-full bg-gray-600 step-dot"></div>
+                    <div class="w-3 h-3 rounded-full bg-gray-600 step-dot"></div>
+                    <div class="w-3 h-3 rounded-full bg-gray-600 step-dot"></div>
+                </div>
+                <span class="text-gray-300 font-mono text-2xl"><span id="time-text" class="text-white font-bold">10</span>s</span>
+            </div>
+            <div id="question-panel" class="glass-panel p-8 text-center mb-8"><h2 id="question-text" class="text-xl font-bold text-white">加载题目...</h2></div>
+            <div id="options-container" class="grid grid-cols-1 gap-4"></div>
+        </div>
+    </div>
+
+    <div id="scene-gacha" class="scene" style="background-image: linear-gradient(to top, #000, transparent), url('https://placehold.co/720x1280/111/gold?text=Reward')">
+        <div class="m-auto text-center p-6 w-full">
+            <h1 class="text-5xl font-black text-yellow-500 mb-10">通关成功！</h1>
+            <div class="flex justify-center space-x-4 mb-8">
+                <div id="sw1" class="slot-window"><div id="st1" class="gacha-strip"><div class="gacha-item">💩</div><div class="gacha-item">⌚</div><div class="gacha-item">🚗</div><div id="target1" class="gacha-item">👑</div></div></div>
+                <div id="sw2" class="slot-window"><div id="st2" class="gacha-strip"><div class="gacha-item">🏠</div><div class="gacha-item">💼</div><div class="gacha-item">🚁</div><div id="target2" class="gacha-item">🚘</div></div></div>
+                <div id="sw3" class="slot-window"><div id="st3" class="gacha-strip"><div class="gacha-item">🪙</div><div class="gacha-item">📱</div><div class="gacha-item">📜</div><div id="target3" class="gacha-item">👩‍💼</div></div></div>
+            </div>
+            <div class="glass-panel p-5 mb-10 text-left">
+                <p id="reward-1" class="text-lg text-gray-300 mb-2"></p>
+                <p id="reward-2" class="text-lg text-gray-300 mb-2"></p>
+                <p id="reward-3" class="text-xl text-yellow-400 font-bold"></p>
+            </div>
+            <button id="next-stage-btn" onclick="nextStage()" class="w-full py-4 rounded-xl text-xl btn-gold hidden">继续改命</button>
+        </div>
+    </div>
+
+    <div id="modal-share" class="modal">
+        <div class="glass-panel w-11/12 p-8 text-center border-red-600 border-2">
+            <div class="text-6xl mb-4">🚨</div>
+            <h2 class="text-3xl font-black text-red-500 mb-3">挑战失败！</h2>
+            <p class="text-gray-200 mb-8">你的逆袭之路被切断！<br>立刻找兄弟【注入资金】复活！</p>
+            <button onclick="simulateShare()" class="w-full py-4 rounded-xl font-bold text-xl bg-green-600 text-white">微信求助复活</button>
+        </div>
+    </div>
+
+    <script>
+        // 洗牌算法
+        function getRandomQuizzes(pool, count) {
+            return [...pool].sort(() => 0.5 - Math.random()).slice(0, count);
+        }
+
+        // 剧本与 50+ 题库数据库
+        const gameData = [
+            {
+                stage: 1,
+                title: "第一关：是否逆袭？",
+                dialog: "【前女友】：阿强，认命吧，你这辈子就是搬砖的命！<br><br>【黑衣人】：连对三题，证明你的智商，送你迈巴赫！",
+                btnText: "选择逆袭",
+                // 第一关题库 (15题)：穷、绿帽、工地
+                quizPool: [
+                    { q: "前女友嫌你穷，什么大象能让你最有面子？", options: ["非洲象", "万象更新", "猛犸象"], correct: 1 },
+                    { q: "工地搬砖太累，什么车不用推自己会走？", options: ["风车", "斗车", "自行车"], correct: 0 },
+                    { q: "小美坐着别人的车走了，什么门永远关不上？", options: ["防盗门", "车门", "球门"], correct: 2 },
+                    { q: "你兜里比脸还干净，什么东西越洗越脏？", options: ["水", "钱", "良心"], correct: 0 },
+                    { q: "什么鸡没有翅膀，小美却很喜欢？", options: ["田鸡", "战斗鸡", "直升机"], correct: 2 },
+                    { q: "老板的头发掉光了，什么病连医生都治不好？", options: ["相思病", "绝症", "神经病"], correct: 0 },
+                    { q: "小美给你戴了绿帽子，什么帽子不能戴？", options: ["草帽", "螺丝帽", "安全帽"], correct: 1 },
+                    { q: "你每天在工地流汗，什么水永远喝不到？", options: ["薪水", "汗水", "墨水"], correct: 0 },
+                    { q: "什么东西买的人知道，用的人不知道？", options: ["棺材", "迈巴赫", "爱马仕"], correct: 0 },
+                    { q: "什么人一年只工作一天，却没人说他懒？", options: ["老板", "圣诞老人", "前任"], correct: 1 },
+                    { q: "你穷得吃土，什么虎会吓人但不会吃人？", options: ["东北虎", "壁虎", "母老虎"], correct: 1 },
+                    { q: "小美嫌你家房子小，什么房不能住人？", options: ["平房", "楼房", "心房"], correct: 2 },
+                    { q: "你被别人踩在脚下，什么东西越踩越亮？", options: ["皮鞋", "马路", "影子"], correct: 2 },
+                    { q: "什么东西你能看到它，却永远抓不住？", options: ["财富", "影子", "爱情"], correct: 1 },
+                    { q: "你每天都在做梦，什么梦最容易实现？", options: ["白日梦", "噩梦", "暴富梦"], correct: 0 }
+                ],
+                gacha: { icons: ['👑', '🚘', '👩‍💼'], texts: ['霸道总裁身份卡', '迈巴赫 S680', '极品秘书 小雅'] }
+            },
+            {
+                stage: 2,
+                title: "第二关：力挽狂澜？",
+                dialog: "【小雅】：总裁，公司面临严重的财务危机，资金链即将断裂！<br><br>【黑衣人】：这是你翻身的机会，是否选择力挽狂澜？",
+                btnText: "力挽狂澜解救公司",
+                // 第二关题库 (17题)：财务、危机、破产
+                quizPool: [
+                    { q: "没钱发工资，什么“布”最能让员工安心？", options: ["擦布", "瀑布", "宣布"], correct: 2 },
+                    { q: "财务报表全是红字，什么字最赚钱？", options: ["黑字", "拆字", "金字"], correct: 1 },
+                    { q: "公司面临倒闭，什么网不能上网？", options: ["互联网", "蜘蛛网", "局域网"], correct: 1 },
+                    { q: "股东卷钱跑路了，什么路最窄？", options: ["马路", "套路", "冤家路窄"], correct: 2 },
+                    { q: "你被讨债的逼上绝路，什么山没有石头？", options: ["冰山", "火山", "人山人海"], correct: 2 },
+                    { q: "什么池不能洗澡，还能帮你公司续命？", options: ["游泳池", "化粪池", "电池"], correct: 2 },
+                    { q: "什么花不能闻，只能用来应付债主？", options: ["玫瑰花", "喇叭花", "交际花"], correct: 1 },
+                    { q: "公司断电了，什么光可以照亮办公室？", options: ["月光", "阳光", "沾光"], correct: 2 },
+                    { q: "你把公司资产都卖了，什么东西越分越多？", options: ["钱", "流言", "股份"], correct: 1 },
+                    { q: "什么表一天只有两次是准的？", options: ["手表", "停走的表", "怀表"], correct: 1 },
+                    { q: "秘书小雅一直跟着你，什么人天天去看病？", options: ["病人", "医生", "家属"], correct: 1 },
+                    { q: "你天天画大饼，什么饼不能吃？", options: ["铁饼", "煎饼", "大饼"], correct: 0 },
+                    { q: "公司账户被冻结，什么冰没有水？", options: ["干冰", "冰山", "冰块"], correct: 0 },
+                    { q: "什么老鼠最喜欢吃公司账户里的钱？", options: ["米老鼠", "硕鼠", "内鬼"], correct: 1 },
+                    { q: "什么东西破了还能让人高兴？", options: ["玻璃", "记录", "破产"], correct: 1 },
+                    { q: "你想逃跑，什么门没有门扇和门框？", options: ["城门", "脑门", "球门"], correct: 1 },
+                    { q: "财务跑路了，什么海没有鱼？", options: ["死海", "辞海", "红海"], correct: 1 }
+                ],
+                gacha: { icons: ['👩‍💼', '📈', '💰'], texts: ['女秘书 * 4', '公司 IPO 上市', '千亿财团注资'] }
+            },
+            {
+                stage: 3,
+                title: "第三关：PK金融巨鳄？",
+                dialog: "【索罗斯】：小伙子，我要恶意做空你的公司，让你一无所有！<br><br>【黑衣人】：只有击败他才能活下去，是否选择PK金融巨鳄？",
+                btnText: "PK金融巨鳄",
+                // 第三关题库 (18题)：金融、股票、博弈 (前两题从这里抽，第三题固定为45%概率陷阱)
+                quizPool: [
+                    { q: "庄家洗盘，什么盘最难洗？", options: ["光盘", "键盘", "崩盘"], correct: 1 },
+                    { q: "韭菜被割了，什么菜永远切不断？", options: ["韭菜", "菠菜", "剩菜"], correct: 0 },
+                    { q: "股市大跌，什么跌最让人高兴？", options: ["跌倒", "跌停", "跌幅收窄"], correct: 2 },
+                    { q: "华尔街没人睡觉，什么人睁着眼睛睡觉？", options: ["死人", "盲人", "假人"], correct: 1 },
+                    { q: "散户都在天台，什么台不能站人？", options: ["窗台", "舞台", "下不来台"], correct: 2 },
+                    { q: "你赚了100亿，什么东西别人抢不走？", options: ["钱", "影子", "资产"], correct: 1 },
+                    { q: "索罗斯输光了，什么光不发亮？", options: ["月光", "沾光", "输光"], correct: 2 },
+                    { q: "市场情绪崩塌，什么墙推不倒？", options: ["防火墙", "人墙", "叹息之墙"], correct: 0 },
+                    { q: "你垄断了纳斯达克，什么客最不客气？", options: ["黑客", "刺客", "常客"], correct: 0 },
+                    { q: "买什么东西不用钱，还能变富？", options: ["买股票", "买教训", "买彩票"], correct: 1 },
+                    { q: "什么火不用火柴也能点燃整个股市？", options: ["鬼火", "怒火", "欲火"], correct: 1 },
+                    { q: "同行的哑巴发财了，什么语全宇宙通用？", options: ["手语", "英语", "星语"], correct: 0 },
+                    { q: "索罗斯被抓了，怎么做才能合法活下来？", options: ["上诉", "越狱", "醒过来"], correct: 2 },
+                    { q: "警车追捕老鼠仓，什么车最长？", options: ["火车", "塞车", "房车"], correct: 1 },
+                    { q: "律师来见你，什么人最不怕冷？", options: ["雪人", "死人", "爱斯基摩人"], correct: 0 },
+                    { q: "牢房门锁了，什么锁没有孔？", options: ["密码锁", "枷锁", "死锁"], correct: 1 },
+                    { q: "科技股突发利好，未来10秒走势？", options: ["暴力拉升", "横盘不动", "见光死"], correct: 0 },
+                    { q: "美联储突然降息，美元怎么走？", options: ["暴涨", "暴跌", "平盘"], correct: 1 }
+                ],
+                // 必出强制陷阱题
+                bossQuiz: { 
+                    q: "【终极豪赌】系统将随机判定K线走势，你选择哪边？", 
+                    options: ["满仓做多", "满仓做空", "持币观望"], 
+                    correct: -1 
+                },
+                gacha: { icons: ['🪙', '📊', '💹'], texts: ['获得 1000 F币', '解锁 K线分析', '解锁 股票交易系统'] }
+            }
+        ];
+
+        let curStageIdx = 0, curSubQ = 0, timer, activeQs = [];
+
+        function switchUi(id) { 
+            document.querySelectorAll('.scene').forEach(s => s.classList.remove('active-scene')); 
+            document.getElementById(id).classList.add('active-scene'); 
+        }
+
+        function renderStory() {
+            const data = gameData[curStageIdx];
+            
+            const storyBgVideo = document.getElementById('story-bg-video');
+            const sceneStory = document.getElementById('scene-story');
+            const gradientOverlay = document.getElementById('story-gradient-overlay');
+            const stageVideos = ['1.mov', '2.mov', '3.mov'];
+
+            storyBgVideo.pause();
+            storyBgVideo.onplay = null;
+            storyBgVideo.onended = null;
+            storyBgVideo.src = stageVideos[curStageIdx];
+            storyBgVideo.style.display = 'block';
+            gradientOverlay.style.display = 'block';
+            sceneStory.style.backgroundImage = 'none';
+            sceneStory.style.backgroundColor = '#000';
+
+            // 用 requestAnimationFrame 精确检测，在视频结束前暂停，停留在最后一帧
+            function checkVideoEnd() {
+                if (storyBgVideo.paused || storyBgVideo.ended) return;
+                if (storyBgVideo.duration && storyBgVideo.currentTime >= storyBgVideo.duration - 0.3) {
+                    storyBgVideo.pause();
+                    return;
+                }
+                requestAnimationFrame(checkVideoEnd);
+            }
+            storyBgVideo.onplay = function() {
+                requestAnimationFrame(checkVideoEnd);
+            };
+            // 兜底：万一视频还是播完了，跳回最后位置
+            storyBgVideo.onended = function() {
+                storyBgVideo.currentTime = Math.max(0, storyBgVideo.duration - 0.3);
+                storyBgVideo.pause();
+            };
+            storyBgVideo.play().catch(function(){});
+
+            // 组装当前关卡的 3 道题
+            if (curStageIdx === 2) {
+                // 第三关：从题库抽2道，最后1道强制塞入 bossQuiz (45%概率陷阱)
+                activeQs = getRandomQuizzes(data.quizPool, 2);
+                activeQs.push(data.bossQuiz);
+            } else {
+                // 第一、二关：正常随机抽3道
+                activeQs = getRandomQuizzes(data.quizPool, 3);
+            }
+
+            document.getElementById('story-title').innerText = data.title;
+            document.getElementById('story-dialog').innerHTML = data.dialog;
+            document.getElementById('story-btn').innerText = data.btnText;
+            switchUi('scene-story');
+        }
+
+        function openQuiz() {
+            const data = gameData[curStageIdx];
+            const q = activeQs[curSubQ];
+            switchUi('scene-quiz');
+            document.getElementById('quiz-level').innerText = data.title;
+            
+            const dots = document.querySelectorAll('.step-dot');
+            dots.forEach((dot, i) => dot.className = i < curSubQ ? "w-3 h-3 rounded-full bg-green-500" : (i === curSubQ ? "w-3 h-3 rounded-full bg-yellow-400 animate-pulse" : "w-3 h-3 rounded-full bg-gray-600"));
+            
+            document.getElementById('question-text').innerText = `(${curSubQ+1}/3) ` + q.q;
+            
+            const box = document.getElementById('options-container'); 
+            box.innerHTML = '';
+            
+            q.options.forEach((txt, i) => {
+                const btn = document.createElement('button');
+                btn.className = "w-full py-5 text-left px-6 rounded-xl bg-gray-800 border border-gray-600 text-white active:scale-95 transition-transform";
+                if(curStageIdx === 2) {
+                    btn.classList.add("text-center", "font-bold", "text-xl");
+                }
+                btn.innerText = txt;
+                btn.onclick = () => submitAnswer(i, q.correct, btn);
+                box.appendChild(btn);
+            });
+            startTimer();
+        }
+
+        function submitAnswer(selectedIdx, correctIdx, btnElement) {
+            clearInterval(timer);
+            document.getElementById('timer').classList.remove('danger-pulse');
+            
+            // 防连点
+            const allBtns = document.getElementById('options-container').querySelectorAll('button');
+            allBtns.forEach(b => b.disabled = true);
+
+            let isWin = (selectedIdx === correctIdx);
+
+            // 【核心剥削逻辑】第3关的第3题，无论选什么，强制 45% 的存活率
+            if (curStageIdx === 2 && curSubQ === 2) {
+                isWin = Math.random() < 0.45;
+            }
+
+            if(isWin) {
+                btnElement.classList.replace('bg-gray-800', 'bg-green-600');
+                btnElement.classList.add('success-flash');
+                setTimeout(() => { 
+                    curSubQ++; 
+                    if(curSubQ < 3) {
+                        openQuiz(); 
+                    } else { 
+                        curSubQ = 0; 
+                        runGacha(); 
+                    } 
+                }, 600);
+            } else {
+                btnElement.classList.replace('bg-gray-800', 'bg-red-600');
+                btnElement.classList.add('shake-anim');
+                document.getElementById('timer').style.background = "#ef4444";
+                setTimeout(() => document.getElementById('modal-share').classList.add('modal-show'), 600);
+            }
+        }
+
+        function startTimer() {
+            let t = 100; const bar = document.getElementById('timer');
+            bar.style.width = "100%"; bar.style.background = "#fbbf24"; bar.classList.remove('danger-pulse');
+            clearInterval(timer);
+            timer = setInterval(() => {
+                t--; bar.style.width = t + "%"; document.getElementById('time-text').innerText = Math.ceil(t/10);
+                if(t === 30) bar.classList.add('danger-pulse');
+                if(t <= 0) { clearInterval(timer); document.getElementById('modal-share').classList.add('modal-show'); }
+            }, 100);
+        }
+
+        function runGacha() {
+            const data = gameData[curStageIdx];
+            ['target1','target2','target3'].forEach((id,i) => document.getElementById(id).innerText = data.gacha.icons[i]);
+            ['st1','st2','st3'].forEach(id => { const s = document.getElementById(id); s.style.transform = 'translateY(0)'; s.classList.add('spinning'); });
+            ['sw1','sw2','sw3'].forEach(id => document.getElementById(id).classList.remove('winner'));
+            switchUi('scene-gacha');
+            
+            document.getElementById('reward-1').innerText = "";
+            document.getElementById('reward-2').innerText = "";
+            document.getElementById('reward-3').innerText = "";
+            document.getElementById('next-stage-btn').classList.add('hidden');
+
+            setTimeout(() => stopSlot('st1','sw1','reward-1',`✅ ${data.gacha.texts[0]}`), 1500);
+            setTimeout(() => stopSlot('st2','sw2','reward-2',`✅ ${data.gacha.texts[1]}`), 2500);
+            setTimeout(() => { 
+                stopSlot('st3','sw3','reward-3',`👑 ${data.gacha.texts[2]}`); 
+                
+                const nextBtn = document.getElementById('next-stage-btn');
+                if(curStageIdx === 2) {
+                    nextBtn.innerText = "进入 股票交易系统";
+                } else {
+                    nextBtn.innerText = "继续改命";
+                }
+                nextBtn.classList.remove('hidden'); 
+            }, 3500);
+        }
+
+        function stopSlot(strip, slot, tid, txt) {
+            const s = document.getElementById(strip); s.classList.remove('spinning'); s.style.transform = 'translateY(-255px)';
+            document.getElementById(slot).classList.add('winner'); document.getElementById(tid).innerText = txt;
+        }
+
+        function nextStage() { 
+            if(curStageIdx < 2) { 
+                curStageIdx++; 
+                renderStory(); 
+            } else { 
+                alert("即将为您跳转至真实的股票交易大厅..."); 
+                location.reload(); 
+            } 
+        }
+
+        function simulateShare() { 
+            const btn = document.querySelector('.modal button');
+            btn.innerText = "正在拉起微信...";
+            setTimeout(() => {
+                alert("已发送求援！好友点击后复活成功！"); 
+                document.getElementById('modal-share').classList.remove('modal-show'); 
+                btn.innerText = "微信求助复活";
+                openQuiz(); // 复活并重新开始本小题
+            }, 1000);
+        }
+
+        window.onload = renderStory;
+    </script>
+</body>
+</html>
