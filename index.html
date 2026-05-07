@@ -6,7 +6,7 @@
     <title>星野逆袭：改命时刻</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body, html { margin: 0; padding: 0; height: 100%; background: #050505; color: #fff; overflow: hidden; font-family: sans-serif; -webkit-user-select: none; }
+        body, html { margin: 0; padding: 0; height: 100%; background: #050505; color: #fff; overflow: hidden; font-family: sans-serif; user-select: none; -webkit-user-select: none; }
         .scene { display: none; width: 100%; height: 100%; position: absolute; top: 0; left: 0; flex-direction: column; background-size: cover; background-position: center; transition: all 0.4s ease; }
         .active-scene { display: flex !important; animation: fadeIn 0.5s ease-out; }
         @keyframes fadeIn { from { opacity: 0; transform: scale(1.05); } to { opacity: 1; transform: scale(1); } }
@@ -20,57 +20,67 @@
         @keyframes shake { 10%, 90% { transform: translate3d(-4px, 0, 0); } 20%, 80% { transform: translate3d(8px, 0, 0); } 30%, 50%, 70% { transform: translate3d(-12px, 0, 0); } 40%, 60% { transform: translate3d(12px, 0, 0); } }
         .success-flash { animation: greenFlash 0.5s; border: 2px solid #22c55e !important; }
         @keyframes greenFlash { 0% { background-color: #22c55e; } 100% { background-color: transparent; } }
-        .slot-window { height: 85px; width: 85px; overflow: hidden; background: #111; border: 2px solid #333; border-radius: 12px; position: relative; }
+        .slot-window { height: min(27vw, 122px); width: min(27vw, 122px); overflow: hidden; background: radial-gradient(circle at 50% 42%, #1d1707 0%, #090909 72%); border: 2px solid #333; border-radius: 16px; position: relative; }
         .slot-window.winner { border-color: #fbbf24; box-shadow: 0 0 25px #fbbf24; }
         .gacha-strip { display: flex; flex-direction: column; width: 100%; transform: translateY(0); }
-        .gacha-item { height: 85px; display: flex; align-items: center; justify-content: center; font-size: 2.8rem; }
+        .gacha-item { height: min(27vw, 122px); display: flex; align-items: center; justify-content: center; font-size: 2.8rem; }
+        .gacha-icon { width: calc(min(27vw, 122px) - 6px); height: calc(min(27vw, 122px) - 6px); object-fit: cover; display: block; border-radius: 14px; filter: drop-shadow(0 7px 15px rgba(0,0,0,0.68)) drop-shadow(0 0 12px rgba(251,191,36,0.35)); }
         .spinning { animation: spin 0.12s linear infinite; }
-        @keyframes spin { from { transform: translateY(0); } to { transform: translateY(-255px); } }
-        .modal { display: none; position: fixed; z-index: 100; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.92); justify-content: center; align-items: center; }
+        @keyframes spin { from { transform: translateY(0); } to { transform: translateY(calc(-3 * min(27vw, 122px))); } }
+        .modal { display: none; position: fixed; z-index: 100; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.58); justify-content: center; align-items: center; padding: 20px; box-sizing: border-box; }
         .modal-show { display: flex; }
+        .hidden-panel { display: none; }
+        .audio-btn { position: fixed; right: 20px; bottom: 20px; z-index: 120; }
     </style>
 </head>
 <body>
 
-    <div id="scene-story" class="scene active-scene" style="background-image: linear-gradient(to top, #000, transparent), url('https://placehold.co/720x1280/2c2c2c/666?text=Background')">
-        <video id="story-bg-video" autoplay muted playsinline style="display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: 1;"></video>
+    <div id="scene-story" class="scene active-scene" style="background-color: #000;">
+        <video id="story-bg-video" autoplay playsinline preload="auto" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: 1;"></video>
         <div id="story-gradient-overlay" style="display: none; position: absolute; bottom: 0; left: 0; width: 100%; height: 70%; background: linear-gradient(to top, rgba(0,0,0,0.9), transparent); z-index: 2; pointer-events: none;"></div>
-        <div class="mt-auto p-6 w-full" style="position: relative; z-index: 10;">
-            <h2 id="story-title" class="text-yellow-400 font-extrabold text-2xl mb-3 border-l-4 border-yellow-400 pl-3">加载中...</h2>
-            <div class="glass-panel p-6 mb-8">
-                <p id="story-dialog" class="text-lg leading-relaxed text-gray-100">加载剧情...</p>
-            </div>
-            <div class="flex space-x-4">
-                <button onclick="alert('你难道要穷一辈子吗？')" class="w-1/3 py-4 rounded-xl font-bold bg-gray-800 border border-gray-600">认命</button>
-                <button id="story-btn" onclick="openQuiz()" class="flex-1 py-4 rounded-xl text-xl btn-gold">开启挑战</button>
-            </div>
-        </div>
-    </div>
 
-    <div id="scene-quiz" class="scene" style="background-image: radial-gradient(circle at top, #2a2a35, #000);">
-        <div id="timer" class="progress-bar"></div>
-        <div class="p-6 flex flex-col h-full justify-center">
-            <div class="flex justify-between items-center mb-6">
-                <span id="quiz-level" class="text-yellow-500 border-2 border-yellow-500 px-4 py-1 rounded-full font-bold">挑战</span>
-                <div class="flex space-x-2" id="step-indicators">
-                    <div class="w-3 h-3 rounded-full bg-gray-600 step-dot"></div>
-                    <div class="w-3 h-3 rounded-full bg-gray-600 step-dot"></div>
-                    <div class="w-3 h-3 rounded-full bg-gray-600 step-dot"></div>
+        <div id="stage-modal" class="modal">
+            <div class="glass-panel w-full max-w-2xl p-6" style="position: relative; z-index: 10;">
+                <div id="stage-intro-view">
+                    <h2 id="story-title" class="text-yellow-400 font-extrabold text-2xl mb-3 border-l-4 border-yellow-400 pl-3">加载中...</h2>
+                    <div class="glass-panel p-6 mb-8">
+                        <p id="story-dialog" class="text-lg leading-relaxed text-gray-100">加载剧情...</p>
+                    </div>
+                    <div class="flex space-x-4">
+                        <button onclick="alert('你难道要穷一辈子吗？')" class="w-1/3 py-4 rounded-xl font-bold bg-gray-800 border border-gray-600">认命</button>
+                        <button id="story-btn" onclick="openQuiz()" class="flex-1 py-4 rounded-xl text-xl btn-gold">开启挑战</button>
+                    </div>
                 </div>
-                <span class="text-gray-300 font-mono text-2xl"><span id="time-text" class="text-white font-bold">10</span>s</span>
+
+                <div id="stage-quiz-view" class="hidden-panel">
+                    <div id="timer" class="progress-bar mb-6"></div>
+                    <div class="flex justify-between items-center mb-6">
+                        <span id="quiz-level" class="text-yellow-500 border-2 border-yellow-500 px-4 py-1 rounded-full font-bold">挑战</span>
+                        <div class="flex space-x-2" id="step-indicators">
+                            <div class="w-3 h-3 rounded-full bg-gray-600 step-dot"></div>
+                            <div class="w-3 h-3 rounded-full bg-gray-600 step-dot"></div>
+                            <div class="w-3 h-3 rounded-full bg-gray-600 step-dot"></div>
+                        </div>
+                        <span class="text-gray-300 font-mono text-2xl"><span id="time-text" class="text-white font-bold">10</span>s</span>
+                    </div>
+                    <div id="question-panel" class="glass-panel p-8 text-center mb-8">
+                        <h2 id="question-text" class="text-xl font-bold text-white">加载题目...</h2>
+                    </div>
+                    <div id="options-container" class="grid grid-cols-1 gap-4"></div>
+                </div>
             </div>
-            <div id="question-panel" class="glass-panel p-8 text-center mb-8"><h2 id="question-text" class="text-xl font-bold text-white">加载题目...</h2></div>
-            <div id="options-container" class="grid grid-cols-1 gap-4"></div>
         </div>
+
+        <button id="audio-activate-btn" onclick="enableVideoAudio()" class="audio-btn py-3 px-5 rounded-xl btn-gold" style="display: none;">点此开启视频音效</button>
     </div>
 
     <div id="scene-gacha" class="scene" style="background-image: linear-gradient(to top, #000, transparent), url('https://placehold.co/720x1280/111/gold?text=Reward')">
         <div class="m-auto text-center p-6 w-full">
             <h1 class="text-5xl font-black text-yellow-500 mb-10">通关成功！</h1>
             <div class="flex justify-center space-x-4 mb-8">
-                <div id="sw1" class="slot-window"><div id="st1" class="gacha-strip"><div class="gacha-item">💩</div><div class="gacha-item">⌚</div><div class="gacha-item">🚗</div><div id="target1" class="gacha-item">👑</div></div></div>
-                <div id="sw2" class="slot-window"><div id="st2" class="gacha-strip"><div class="gacha-item">🏠</div><div class="gacha-item">💼</div><div class="gacha-item">🚁</div><div id="target2" class="gacha-item">🚘</div></div></div>
-                <div id="sw3" class="slot-window"><div id="st3" class="gacha-strip"><div class="gacha-item">🪙</div><div class="gacha-item">📱</div><div class="gacha-item">📜</div><div id="target3" class="gacha-item">👩‍💼</div></div></div>
+                <div id="sw1" class="slot-window"><div id="st1" class="gacha-strip"><div class="gacha-item">💩</div><div class="gacha-item">⌚</div><div class="gacha-item">🚗</div><div id="target1" class="gacha-item"><img class="gacha-icon" src="assets/rewards/ceo-card.png" alt="霸道总裁身份卡"></div></div></div>
+                <div id="sw2" class="slot-window"><div id="st2" class="gacha-strip"><div class="gacha-item">🏠</div><div class="gacha-item">💼</div><div class="gacha-item">🚁</div><div id="target2" class="gacha-item"><img class="gacha-icon" src="assets/rewards/maybach-reward.png" alt="迈巴赫 S680"></div></div></div>
+                <div id="sw3" class="slot-window"><div id="st3" class="gacha-strip"><div class="gacha-item">🪙</div><div class="gacha-item">📱</div><div class="gacha-item">📜</div><div id="target3" class="gacha-item"><img class="gacha-icon" src="assets/rewards/secretary-reward.png" alt="极品秘书 小雅"></div></div></div>
             </div>
             <div class="glass-panel p-5 mb-10 text-left">
                 <p id="reward-1" class="text-lg text-gray-300 mb-2"></p>
@@ -82,11 +92,26 @@
     </div>
 
     <div id="modal-share" class="modal">
-        <div class="glass-panel w-11/12 p-8 text-center border-red-600 border-2">
+        <div class="glass-panel w-11/12 max-w-2xl p-8 text-center border-red-600 border-2">
             <div class="text-6xl mb-4">🚨</div>
             <h2 class="text-3xl font-black text-red-500 mb-3">挑战失败！</h2>
-            <p class="text-gray-200 mb-8">你的逆袭之路被切断！<br>立刻找兄弟【注入资金】复活！</p>
-            <button onclick="simulateShare()" class="w-full py-4 rounded-xl font-bold text-xl bg-green-600 text-white">微信求助复活</button>
+            <p class="text-gray-200 mb-6">你的逆袭之路被切断！<br>立刻把二维码发给兄弟，求一波【注入资金】复活！</p>
+
+            <div class="glass-panel p-5 mb-6">
+                <img src="qrcode.png" alt="复活分享二维码" class="w-36 h-36 mx-auto mb-4 rounded-xl bg-white p-2 object-contain">
+                <p class="text-sm text-gray-300 leading-relaxed">把这个二维码和下面这段文案发到海外社媒，好友扫码后即可助你复活。</p>
+                <div class="mt-3 px-4 py-3 rounded-xl bg-black/40 border border-yellow-500/30">
+                    <p id="share-copy-text" class="text-yellow-300 text-sm leading-relaxed break-words">兄弟，江湖救急！扫码给我注入资金，助我满血复活继续逆袭！</p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <button id="share-line-btn" onclick="shareRevive('line')" class="w-full py-4 rounded-xl font-bold text-lg bg-green-500 text-white">分享到 LINE</button>
+                <button id="share-facebook-btn" onclick="shareRevive('facebook')" class="w-full py-4 rounded-xl font-bold text-lg bg-blue-600 text-white">分享到 Facebook</button>
+                <button id="share-twitter-btn" onclick="shareRevive('twitter')" class="w-full py-4 rounded-xl font-bold text-lg bg-sky-500 text-white">分享到 Twitter</button>
+            </div>
+
+            <p id="share-status" class="text-xs text-gray-400 mt-4">点击按钮后会优先尝试直接拉起对应 App。</p>
         </div>
     </div>
 
@@ -121,7 +146,14 @@
                     { q: "什么东西你能看到它，却永远抓不住？", options: ["财富", "影子", "爱情"], correct: 1 },
                     { q: "你每天都在做梦，什么梦最容易实现？", options: ["白日梦", "噩梦", "暴富梦"], correct: 0 }
                 ],
-                gacha: { icons: ['👑', '🚘', '👩‍💼'], texts: ['霸道总裁身份卡', '迈巴赫 S680', '极品秘书 小雅'] }
+                gacha: {
+                    icons: [
+                        { src: 'assets/rewards/ceo-card.png', alt: '霸道总裁身份卡' },
+                        { src: 'assets/rewards/maybach-reward.png', alt: '迈巴赫 S680' },
+                        { src: 'assets/rewards/secretary-reward.png', alt: '极品秘书 小雅' }
+                    ],
+                    texts: ['霸道总裁身份卡', '迈巴赫 S680', '极品秘书 小雅']
+                }
             },
             {
                 stage: 2,
@@ -148,7 +180,14 @@
                     { q: "你想逃跑，什么门没有门扇和门框？", options: ["城门", "脑门", "球门"], correct: 1 },
                     { q: "财务跑路了，什么海没有鱼？", options: ["死海", "辞海", "红海"], correct: 1 }
                 ],
-                gacha: { icons: ['👩‍💼', '📈', '💰'], texts: ['女秘书 * 4', '公司 IPO 上市', '千亿财团注资'] }
+                gacha: {
+                    icons: [
+                        { src: 'assets/rewards/assistant-team.png', alt: '女秘书 * 4' },
+                        { src: 'assets/rewards/ipo-bell.png', alt: '公司 IPO 上市' },
+                        { src: 'assets/rewards/consortium-investment.png', alt: '千亿财团注资' }
+                    ],
+                    texts: ['女秘书 * 4', '公司 IPO 上市', '千亿财团注资']
+                }
             },
             {
                 stage: 3,
@@ -182,15 +221,131 @@
                     options: ["满仓做多", "满仓做空", "持币观望"], 
                     correct: -1 
                 },
-                gacha: { icons: ['🪙', '📊', '💹'], texts: ['获得 1000 F币', '解锁 K线分析', '解锁 股票交易系统'] }
+                gacha: {
+                    icons: [
+                        { src: 'assets/rewards/f-coins.png', alt: '获得 1000 F币' },
+                        { src: 'assets/rewards/kline-analysis.png', alt: '解锁 K线分析' },
+                        { src: 'assets/rewards/trading-system.png', alt: '解锁 股票交易系统' }
+                    ],
+                    texts: ['获得 1000 F币', '解锁 K线分析', '解锁 股票交易系统']
+                }
             }
         ];
 
-        let curStageIdx = 0, curSubQ = 0, timer, activeQs = [];
+        let curStageIdx = 0, curSubQ = 0, timer, activeQs = [], audioCtx = null;
+        const stageVideos = [
+            'https://resource.flickai.io/1.mp4',
+            'https://resource.flickai.io/2.mp4',
+            'https://resource.flickai.io/3.mp4'
+        ];
+        window.__sfxLog = [];
+
+        function getAudioContext() {
+            if (!audioCtx) {
+                const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+                if (!AudioContextClass) return null;
+                audioCtx = new AudioContextClass();
+            }
+            return audioCtx;
+        }
+
+        function resumeAudioContext() {
+            const ctx = getAudioContext();
+            if (ctx && ctx.state === 'suspended') {
+                ctx.resume().catch(() => {});
+            }
+            return ctx;
+        }
+
+        function playTone(startFreq, endFreq, duration, volume, type = 'sine', delay = 0) {
+            const ctx = getAudioContext();
+            if (!ctx || ctx.state !== 'running') return;
+
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            const startAt = ctx.currentTime + delay;
+            osc.type = type;
+            osc.frequency.setValueAtTime(startFreq, startAt);
+            osc.frequency.linearRampToValueAtTime(endFreq, startAt + duration);
+            gain.gain.setValueAtTime(0.0001, startAt);
+            gain.gain.exponentialRampToValueAtTime(volume, startAt + 0.01);
+            gain.gain.exponentialRampToValueAtTime(0.0001, startAt + duration);
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.start(startAt);
+            osc.stop(startAt + duration + 0.02);
+        }
+
+        function playSfx(name) {
+            const ctx = getAudioContext();
+            if (!ctx) return;
+            if (ctx.state === 'suspended') {
+                ctx.resume().then(() => playSfx(name)).catch(() => {});
+                return;
+            }
+            if (ctx.state !== 'running') return;
+
+            window.__sfxLog.push(name);
+            if (window.__sfxLog.length > 20) {
+                window.__sfxLog.shift();
+            }
+
+            if (name === 'tap') {
+                playTone(820, 560, 0.06, 0.03, 'triangle');
+            } else if (name === 'success') {
+                playTone(520, 780, 0.12, 0.045, 'triangle');
+                playTone(780, 980, 0.12, 0.03, 'triangle', 0.1);
+            } else if (name === 'fail') {
+                playTone(380, 180, 0.2, 0.05, 'sawtooth');
+            } else if (name === 'gacha-start') {
+                playTone(240, 520, 0.22, 0.04, 'sawtooth');
+            } else if (name === 'gacha-stop') {
+                playTone(660, 420, 0.08, 0.04, 'square');
+            } else if (name === 'jackpot') {
+                playTone(520, 840, 0.14, 0.05, 'triangle');
+                playTone(840, 1180, 0.18, 0.04, 'triangle', 0.12);
+                playTone(1180, 1480, 0.24, 0.03, 'triangle', 0.24);
+            }
+        }
 
         function switchUi(id) { 
             document.querySelectorAll('.scene').forEach(s => s.classList.remove('active-scene')); 
             document.getElementById(id).classList.add('active-scene'); 
+        }
+
+        function showStageModal(view) {
+            document.getElementById('stage-modal').classList.add('modal-show');
+            document.getElementById('stage-intro-view').classList.toggle('hidden-panel', view !== 'intro');
+            document.getElementById('stage-quiz-view').classList.toggle('hidden-panel', view !== 'quiz');
+        }
+
+        function hideStageModal() {
+            document.getElementById('stage-modal').classList.remove('modal-show');
+        }
+
+        function toggleAudioButton(show) {
+            document.getElementById('audio-activate-btn').style.display = show ? 'block' : 'none';
+        }
+
+        function enableVideoAudio() {
+            resumeAudioContext();
+            const storyBgVideo = document.getElementById('story-bg-video');
+            storyBgVideo.muted = false;
+            storyBgVideo.volume = 1;
+            if (!storyBgVideo.paused && !storyBgVideo.ended) {
+                storyBgVideo.play().then(() => toggleAudioButton(false)).catch(() => toggleAudioButton(true));
+            } else {
+                toggleAudioButton(false);
+            }
+        }
+
+        function bindAudioInteractions() {
+            document.addEventListener('pointerdown', (event) => {
+                enableVideoAudio();
+                if (event.target.closest('button')) {
+                    setTimeout(() => playSfx('tap'), 20);
+                }
+            }, { passive: true });
         }
 
         function renderStory() {
@@ -199,43 +354,66 @@
             const storyBgVideo = document.getElementById('story-bg-video');
             const sceneStory = document.getElementById('scene-story');
             const gradientOverlay = document.getElementById('story-gradient-overlay');
-            const stageVideos = ['1.mov', '2.mov', '3.mov'];
+            let introShown = false;
+
+            function showStageIntro() {
+                if (introShown) return;
+                introShown = true;
+                storyBgVideo.pause();
+                gradientOverlay.style.display = 'block';
+                showStageModal('intro');
+            }
 
             storyBgVideo.pause();
             storyBgVideo.onplay = null;
             storyBgVideo.onended = null;
+            storyBgVideo.onloadedmetadata = null;
+            storyBgVideo.onerror = null;
+            storyBgVideo.currentTime = 0;
             storyBgVideo.src = stageVideos[curStageIdx];
-            storyBgVideo.style.display = 'block';
-            gradientOverlay.style.display = 'block';
+            storyBgVideo.muted = false;
+            storyBgVideo.volume = 1;
+            storyBgVideo.onloadedmetadata = function() {
+                storyBgVideo.play().catch(function() {
+                    storyBgVideo.muted = true;
+                    storyBgVideo.play().then(function() {
+                        toggleAudioButton(true);
+                    }).catch(function(){});
+                });
+            };
+            storyBgVideo.onerror = function() {
+                showStageIntro();
+            };
+            storyBgVideo.load();
+            clearInterval(timer);
+            curSubQ = 0;
+            toggleAudioButton(false);
+            hideStageModal();
+            gradientOverlay.style.display = 'none';
             sceneStory.style.backgroundImage = 'none';
             sceneStory.style.backgroundColor = '#000';
+            document.getElementById('modal-share').classList.remove('modal-show');
 
-            // 用 requestAnimationFrame 精确检测，在视频结束前暂停，停留在最后一帧
             function checkVideoEnd() {
-                if (storyBgVideo.paused || storyBgVideo.ended) return;
+                if (introShown || storyBgVideo.paused || storyBgVideo.ended) return;
                 if (storyBgVideo.duration && storyBgVideo.currentTime >= storyBgVideo.duration - 0.3) {
-                    storyBgVideo.pause();
+                    showStageIntro();
                     return;
                 }
                 requestAnimationFrame(checkVideoEnd);
             }
+
             storyBgVideo.onplay = function() {
                 requestAnimationFrame(checkVideoEnd);
             };
-            // 兜底：万一视频还是播完了，跳回最后位置
             storyBgVideo.onended = function() {
-                storyBgVideo.currentTime = Math.max(0, storyBgVideo.duration - 0.3);
-                storyBgVideo.pause();
+                showStageIntro();
             };
-            storyBgVideo.play().catch(function(){});
 
-            // 组装当前关卡的 3 道题
             if (curStageIdx === 2) {
-                // 第三关：从题库抽2道，最后1道强制塞入 bossQuiz (45%概率陷阱)
                 activeQs = getRandomQuizzes(data.quizPool, 2);
                 activeQs.push(data.bossQuiz);
             } else {
-                // 第一、二关：正常随机抽3道
                 activeQs = getRandomQuizzes(data.quizPool, 3);
             }
 
@@ -248,7 +426,7 @@
         function openQuiz() {
             const data = gameData[curStageIdx];
             const q = activeQs[curSubQ];
-            switchUi('scene-quiz');
+            showStageModal('quiz');
             document.getElementById('quiz-level').innerText = data.title;
             
             const dots = document.querySelectorAll('.step-dot');
@@ -276,18 +454,17 @@
             clearInterval(timer);
             document.getElementById('timer').classList.remove('danger-pulse');
             
-            // 防连点
             const allBtns = document.getElementById('options-container').querySelectorAll('button');
             allBtns.forEach(b => b.disabled = true);
 
             let isWin = (selectedIdx === correctIdx);
 
-            // 【核心剥削逻辑】第3关的第3题，无论选什么，强制 45% 的存活率
             if (curStageIdx === 2 && curSubQ === 2) {
                 isWin = Math.random() < 0.45;
             }
 
             if(isWin) {
+                playSfx('success');
                 btnElement.classList.replace('bg-gray-800', 'bg-green-600');
                 btnElement.classList.add('success-flash');
                 setTimeout(() => { 
@@ -300,6 +477,7 @@
                     } 
                 }, 600);
             } else {
+                playSfx('fail');
                 btnElement.classList.replace('bg-gray-800', 'bg-red-600');
                 btnElement.classList.add('shake-anim');
                 document.getElementById('timer').style.background = "#ef4444";
@@ -309,6 +487,7 @@
 
         function startTimer() {
             let t = 100; const bar = document.getElementById('timer');
+            document.getElementById('time-text').innerText = '10';
             bar.style.width = "100%"; bar.style.background = "#fbbf24"; bar.classList.remove('danger-pulse');
             clearInterval(timer);
             timer = setInterval(() => {
@@ -318,9 +497,26 @@
             }, 100);
         }
 
+        function setGachaIcon(targetId, icon) {
+            const target = document.getElementById(targetId);
+            target.textContent = "";
+            if(icon && typeof icon === 'object' && icon.src) {
+                const image = document.createElement('img');
+                image.className = 'gacha-icon';
+                image.src = icon.src;
+                image.alt = icon.alt || '';
+                target.appendChild(image);
+                return;
+            }
+            target.innerText = icon;
+        }
+
         function runGacha() {
             const data = gameData[curStageIdx];
-            ['target1','target2','target3'].forEach((id,i) => document.getElementById(id).innerText = data.gacha.icons[i]);
+            clearInterval(timer);
+            document.getElementById('modal-share').classList.remove('modal-show');
+            playSfx('gacha-start');
+            ['target1','target2','target3'].forEach((id,i) => setGachaIcon(id, data.gacha.icons[i]));
             ['st1','st2','st3'].forEach(id => { const s = document.getElementById(id); s.style.transform = 'translateY(0)'; s.classList.add('spinning'); });
             ['sw1','sw2','sw3'].forEach(id => document.getElementById(id).classList.remove('winner'));
             switchUi('scene-gacha');
@@ -330,10 +526,11 @@
             document.getElementById('reward-3').innerText = "";
             document.getElementById('next-stage-btn').classList.add('hidden');
 
-            setTimeout(() => stopSlot('st1','sw1','reward-1',`✅ ${data.gacha.texts[0]}`), 1500);
-            setTimeout(() => stopSlot('st2','sw2','reward-2',`✅ ${data.gacha.texts[1]}`), 2500);
+            setTimeout(() => stopSlot('st1','sw1','reward-1',`已获得：${data.gacha.texts[0]}`), 1500);
+            setTimeout(() => stopSlot('st2','sw2','reward-2',`已获得：${data.gacha.texts[1]}`), 2500);
             setTimeout(() => { 
-                stopSlot('st3','sw3','reward-3',`👑 ${data.gacha.texts[2]}`); 
+                stopSlot('st3','sw3','reward-3',`压轴奖励：${data.gacha.texts[2]}`); 
+                playSfx('jackpot');
                 
                 const nextBtn = document.getElementById('next-stage-btn');
                 if(curStageIdx === 2) {
@@ -346,7 +543,8 @@
         }
 
         function stopSlot(strip, slot, tid, txt) {
-            const s = document.getElementById(strip); s.classList.remove('spinning'); s.style.transform = 'translateY(-255px)';
+            playSfx('gacha-stop');
+            const s = document.getElementById(strip); s.classList.remove('spinning'); s.style.transform = 'translateY(calc(-3 * min(27vw, 122px)))';
             document.getElementById(slot).classList.add('winner'); document.getElementById(tid).innerText = txt;
         }
 
@@ -360,17 +558,55 @@
             } 
         }
 
-        function simulateShare() { 
-            const btn = document.querySelector('.modal button');
-            btn.innerText = "正在拉起微信...";
-            setTimeout(() => {
-                alert("已发送求援！好友点击后复活成功！"); 
-                document.getElementById('modal-share').classList.remove('modal-show'); 
-                btn.innerText = "微信求助复活";
-                openQuiz(); // 复活并重新开始本小题
-            }, 1000);
+        function getShareData(platform) {
+            const qrUrl = new URL('qrcode.png', location.href).href;
+            const pageUrl = location.href;
+            const copyText = document.getElementById('share-copy-text').innerText;
+            const fullText = `${copyText} 二维码：${qrUrl}`;
+
+            const shareMap = {
+                line: {
+                    label: 'LINE',
+                    appUrl: `line://msg/text/${encodeURIComponent(fullText)}`,
+                    webUrl: `https://line.me/R/msg/text/?${encodeURIComponent(fullText)}`
+                },
+                facebook: {
+                    label: 'Facebook',
+                    appUrl: `fb://facewebmodal/f?href=${encodeURIComponent(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(pageUrl)}&quote=${encodeURIComponent(fullText)}`)}`,
+                    webUrl: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(pageUrl)}&quote=${encodeURIComponent(fullText)}`
+                },
+                twitter: {
+                    label: 'Twitter',
+                    appUrl: `twitter://post?message=${encodeURIComponent(fullText)}`,
+                    webUrl: `https://twitter.com/intent/tweet?text=${encodeURIComponent(fullText)}`
+                }
+            };
+
+            return shareMap[platform];
         }
 
+        function shareRevive(platform) { 
+            const data = getShareData(platform);
+            const status = document.getElementById('share-status');
+            status.innerText = `正在拉起 ${data.label}，如果未安装 App 会自动跳转到网页分享...`;
+
+            const fallbackTimer = setTimeout(() => {
+                if (document.visibilityState === 'visible') {
+                    window.open(data.webUrl, '_blank');
+                }
+            }, 900);
+
+            window.location.href = data.appUrl;
+
+            setTimeout(() => {
+                clearTimeout(fallbackTimer);
+                document.getElementById('modal-share').classList.remove('modal-show'); 
+                status.innerText = `${data.label} 已拉起，复活成功，继续挑战！`;
+                openQuiz();
+            }, 1200);
+        }
+
+        bindAudioInteractions();
         window.onload = renderStory;
     </script>
 </body>
