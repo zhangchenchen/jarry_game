@@ -1,6 +1,15 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-8H33YCDM4N"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'G-8H33YCDM4N');
+    </script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="description" content="我卡关了，快来帮我复活，一起逆袭翻盘。">
@@ -19,6 +28,9 @@
     <meta name="twitter:description" content="我卡关了，快来帮我复活，一起逆袭翻盘。">
     <meta name="twitter:image" content="https://jarry-game.vercel.app/assets/image2.png">
     <title>星野逆袭：改命时刻</title>
+    <link rel="preconnect" href="https://cdn.tailwindcss.com">
+    <link rel="preconnect" href="https://resource.flickai.io" crossorigin>
+    <link rel="dns-prefetch" href="https://resource.flickai.io">
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body, html { margin: 0; padding: 0; height: 100%; background: #050505; color: #fff; overflow: hidden; font-family: sans-serif; user-select: none; -webkit-user-select: none; }
@@ -53,7 +65,7 @@
 <body>
 
     <div id="scene-story" class="scene active-scene" style="background-color: #000;">
-        <video id="story-bg-video" autoplay playsinline preload="auto" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: 1;"></video>
+        <video id="story-bg-video" autoplay muted playsinline preload="metadata" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: 1;"></video>
         <div id="story-gradient-overlay" style="display: none; position: absolute; bottom: 0; left: 0; width: 100%; height: 70%; background: linear-gradient(to top, rgba(0,0,0,0.9), transparent); z-index: 2; pointer-events: none;"></div>
 
         <div id="stage-modal" class="modal">
@@ -95,9 +107,9 @@
         <div class="m-auto text-center p-6 w-full">
             <h1 class="text-5xl font-black text-yellow-500 mb-10">通关成功！</h1>
             <div class="flex justify-center space-x-4 mb-8">
-                <div id="sw1" class="slot-window"><div id="st1" class="gacha-strip"><div class="gacha-item">💩</div><div class="gacha-item">⌚</div><div class="gacha-item">🚗</div><div id="target1" class="gacha-item"><img class="gacha-icon" src="assets/rewards/ceo-card.png" alt="霸道总裁身份卡"></div></div></div>
-                <div id="sw2" class="slot-window"><div id="st2" class="gacha-strip"><div class="gacha-item">🏠</div><div class="gacha-item">💼</div><div class="gacha-item">🚁</div><div id="target2" class="gacha-item"><img class="gacha-icon" src="assets/rewards/maybach-reward.png" alt="迈巴赫 S680"></div></div></div>
-                <div id="sw3" class="slot-window"><div id="st3" class="gacha-strip"><div class="gacha-item">🪙</div><div class="gacha-item">📱</div><div class="gacha-item">📜</div><div id="target3" class="gacha-item"><img class="gacha-icon" src="assets/rewards/secretary-reward.png" alt="极品秘书 小雅"></div></div></div>
+                <div id="sw1" class="slot-window"><div id="st1" class="gacha-strip"><div class="gacha-item">💩</div><div class="gacha-item">⌚</div><div class="gacha-item">🚗</div><div id="target1" class="gacha-item">?</div></div></div>
+                <div id="sw2" class="slot-window"><div id="st2" class="gacha-strip"><div class="gacha-item">🏠</div><div class="gacha-item">💼</div><div class="gacha-item">🚁</div><div id="target2" class="gacha-item">?</div></div></div>
+                <div id="sw3" class="slot-window"><div id="st3" class="gacha-strip"><div class="gacha-item">🪙</div><div class="gacha-item">📱</div><div class="gacha-item">📜</div><div id="target3" class="gacha-item">?</div></div></div>
             </div>
             <div class="glass-panel p-5 mb-10 text-left">
                 <p id="reward-1" class="text-lg text-gray-300 mb-2"></p>
@@ -116,14 +128,14 @@
 
             <div class="glass-panel p-5 mb-6">
                 <div class="w-full max-w-[260px] mx-auto mb-4 rounded-xl bg-white/5 p-1">
-                    <img src="assets/image2.png" alt="复活分享海报" class="w-full h-auto max-h-[42vh] rounded-lg object-contain block">
+                    <img data-src="assets/image2.png" alt="复活分享海报" loading="lazy" decoding="async" class="w-full h-auto max-h-[42vh] rounded-lg object-contain block">
                 </div>
             </div>
 
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <button id="share-line-btn" onclick="shareRevive('line')" class="w-full py-4 rounded-xl font-bold text-lg bg-green-500 text-white">分享到 LINE</button>
-                <button id="share-facebook-btn" onclick="shareRevive('facebook')" class="w-full py-4 rounded-xl font-bold text-lg bg-blue-600 text-white">分享到 Facebook</button>
-                <button id="share-twitter-btn" onclick="shareRevive('twitter')" class="w-full py-4 rounded-xl font-bold text-lg bg-sky-500 text-white">分享到 Twitter</button>
+                <button id="share-line-btn" onclick="shareRevive('line')" class="order-2 sm:order-1 w-full py-4 rounded-xl font-bold text-lg bg-green-500 text-white">分享到 LINE</button>
+                <button id="share-facebook-btn" onclick="shareRevive('facebook')" class="order-3 sm:order-2 w-full py-4 rounded-xl font-bold text-lg bg-blue-600 text-white">分享到 Facebook</button>
+                <button id="share-twitter-btn" onclick="shareRevive('twitter')" class="order-1 sm:order-3 w-full py-4 rounded-xl font-bold text-lg bg-sky-500 text-white">分享到 Twitter</button>
             </div>
 
             <p id="share-status" class="text-xs text-gray-400 mt-4">点击按钮后会优先尝试直接拉起对应 App。</p>
@@ -132,7 +144,7 @@
 
     <div id="modal-final" class="modal">
         <div class="glass-panel w-11/12 max-w-md p-4 text-center border-yellow-500 border-2">
-            <img src="assets/image3.jpg" alt="最终通关海报" class="w-full h-auto max-h-[78vh] rounded-xl object-contain block">
+            <img data-src="assets/image3.jpg" alt="最终通关海报" loading="lazy" decoding="async" class="w-full h-auto max-h-[78vh] rounded-xl object-contain block">
         </div>
     </div>
 
@@ -256,11 +268,13 @@
         let curStageIdx = 0, curSubQ = 0, timer, activeQs = [], audioCtx = null, stageAdvanceTimer = null;
         const SHARE_PAGE_URL = 'https://jarry-game.vercel.app/';
         const SHARE_TEXT = '我卡关了，快来帮我复活，一起逆袭翻盘。';
-        const stageVideos = [
+        const stageVideos = ['1.mp4', '2.mp4', '3.mp4'];
+        const fallbackStageVideos = [
             'https://resource.flickai.io/1.mp4',
             'https://resource.flickai.io/2.mp4',
             'https://resource.flickai.io/3.mp4'
         ];
+        const prefetchedVideos = new Set();
         window.__sfxLog = [];
 
         function getAudioContext() {
@@ -350,6 +364,34 @@
             document.getElementById('audio-activate-btn').style.display = show ? 'block' : 'none';
         }
 
+        function loadDeferredImages(root = document) {
+            root.querySelectorAll('img[data-src]').forEach((image) => {
+                image.src = image.dataset.src;
+                image.removeAttribute('data-src');
+            });
+        }
+
+        function preloadImages(urls) {
+            const schedule = window.requestIdleCallback || ((callback) => setTimeout(callback, 800));
+            schedule(() => {
+                urls.forEach((url) => {
+                    const image = new Image();
+                    image.decoding = 'async';
+                    image.src = url;
+                });
+            }, { timeout: 1200 });
+        }
+
+        function prefetchVideo(stageIdx) {
+            if (stageIdx >= stageVideos.length || prefetchedVideos.has(stageIdx)) return;
+            prefetchedVideos.add(stageIdx);
+            const link = document.createElement('link');
+            link.rel = 'prefetch';
+            link.as = 'video';
+            link.href = stageVideos[stageIdx];
+            document.head.appendChild(link);
+        }
+
         function enableVideoAudio() {
             resumeAudioContext();
             const storyBgVideo = document.getElementById('story-bg-video');
@@ -386,6 +428,8 @@
                 storyBgVideo.pause();
                 gradientOverlay.style.display = 'block';
                 showStageModal('intro');
+                prefetchVideo(curStageIdx + 1);
+                preloadImages(data.gacha.icons.map(icon => icon.src));
             }
 
             storyBgVideo.pause();
@@ -393,22 +437,29 @@
             storyBgVideo.onended = null;
             storyBgVideo.onloadedmetadata = null;
             storyBgVideo.onerror = null;
-            storyBgVideo.currentTime = 0;
+            try {
+                storyBgVideo.currentTime = 0;
+            } catch (error) {}
             storyBgVideo.src = stageVideos[curStageIdx];
-            storyBgVideo.muted = false;
+            storyBgVideo.muted = true;
             storyBgVideo.volume = 1;
-            storyBgVideo.onloadedmetadata = function() {
-                storyBgVideo.play().catch(function() {
-                    storyBgVideo.muted = true;
+            storyBgVideo.play().then(function() {
+                toggleAudioButton(true);
+            }).catch(function() {
+                storyBgVideo.load();
+            });
+            storyBgVideo.onerror = function() {
+                if (storyBgVideo.src !== fallbackStageVideos[curStageIdx]) {
+                    storyBgVideo.src = fallbackStageVideos[curStageIdx];
                     storyBgVideo.play().then(function() {
                         toggleAudioButton(true);
-                    }).catch(function(){});
-                });
-            };
-            storyBgVideo.onerror = function() {
+                    }).catch(function() {
+                        storyBgVideo.load();
+                    });
+                    return;
+                }
                 showStageIntro();
             };
-            storyBgVideo.load();
             clearInterval(timer);
             curSubQ = 0;
             toggleAudioButton(false);
@@ -506,7 +557,11 @@
                 btnElement.classList.replace('bg-gray-800', 'bg-red-600');
                 btnElement.classList.add('shake-anim');
                 document.getElementById('timer').style.background = "#ef4444";
-                setTimeout(() => document.getElementById('modal-share').classList.add('modal-show'), 600);
+                setTimeout(() => {
+                    const shareModal = document.getElementById('modal-share');
+                    loadDeferredImages(shareModal);
+                    shareModal.classList.add('modal-show');
+                }, 600);
             }
         }
 
@@ -518,7 +573,12 @@
             timer = setInterval(() => {
                 t--; bar.style.width = t + "%"; document.getElementById('time-text').innerText = Math.ceil(t/10);
                 if(t === 30) bar.classList.add('danger-pulse');
-                if(t <= 0) { clearInterval(timer); document.getElementById('modal-share').classList.add('modal-show'); }
+                if(t <= 0) {
+                    clearInterval(timer);
+                    const shareModal = document.getElementById('modal-share');
+                    loadDeferredImages(shareModal);
+                    shareModal.classList.add('modal-show');
+                }
             }, 100);
         }
 
@@ -562,7 +622,11 @@
                 const nextBtn = document.getElementById('next-stage-btn');
                 if(curStageIdx === 2) {
                     nextBtn.classList.add('hidden');
-                    setTimeout(() => document.getElementById('modal-final').classList.add('modal-show'), 700);
+                    setTimeout(() => {
+                        const finalModal = document.getElementById('modal-final');
+                        loadDeferredImages(finalModal);
+                        finalModal.classList.add('modal-show');
+                    }, 700);
                 } else {
                     nextBtn.innerText = "继续改命";
                     nextBtn.classList.add('hidden');
@@ -636,7 +700,7 @@
         }
 
         bindAudioInteractions();
-        window.onload = renderStory;
+        document.addEventListener('DOMContentLoaded', renderStory);
     </script>
 </body>
 </html>
