@@ -3,6 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="description" content="我卡关了，快来帮我复活，一起逆袭翻盘。">
+    <link rel="canonical" href="https://jarry-game.vercel.app/">
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="星野逆袭：改命时刻">
+    <meta property="og:description" content="我卡关了，快来帮我复活，一起逆袭翻盘。">
+    <meta property="og:url" content="https://jarry-game.vercel.app/">
+    <meta property="og:image" content="https://jarry-game.vercel.app/assets/image2.png">
+    <meta property="og:image:secure_url" content="https://jarry-game.vercel.app/assets/image2.png">
+    <meta property="og:image:width" content="1569">
+    <meta property="og:image:height" content="2670">
+    <meta property="og:image:alt" content="星野逆袭分享海报">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="星野逆袭：改命时刻">
+    <meta name="twitter:description" content="我卡关了，快来帮我复活，一起逆袭翻盘。">
+    <meta name="twitter:image" content="https://jarry-game.vercel.app/assets/image2.png">
     <title>星野逆袭：改命时刻</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
@@ -97,13 +112,14 @@
         <div class="glass-panel w-11/12 max-w-2xl p-8 text-center border-red-600 border-2">
             <div class="text-6xl mb-4">🚨</div>
             <h2 class="text-3xl font-black text-red-500 mb-3">挑战失败！</h2>
-            <p class="text-gray-200 mb-6">你的逆袭之路被切断！<br>立刻把二维码发给兄弟，求一波【注入资金】复活！</p>
+            <p class="text-gray-200 mb-6">你的逆袭之路被切断！<br>分享给朋友，拉你一把继续闯关。</p>
 
             <div class="glass-panel p-5 mb-6">
-                <img src="qrcode.png" alt="复活分享二维码" class="w-36 h-36 mx-auto mb-4 rounded-xl bg-white p-2 object-contain">
-                <p class="text-sm text-gray-300 leading-relaxed">把这个二维码和下面这段文案发到海外社媒，好友扫码后即可助你复活。</p>
+                <div class="w-full max-w-[260px] mx-auto mb-4 rounded-xl bg-white/5 p-1">
+                    <img src="assets/image2.png" alt="复活分享海报" class="w-full h-auto max-h-[42vh] rounded-lg object-contain block">
+                </div>
                 <div class="mt-3 px-4 py-3 rounded-xl bg-black/40 border border-yellow-500/30">
-                    <p id="share-copy-text" class="text-yellow-300 text-sm leading-relaxed break-words">兄弟，江湖救急！扫码给我注入资金，助我满血复活继续逆袭！</p>
+                    <p id="share-copy-text" class="text-yellow-300 text-sm leading-relaxed break-words">我卡关了，快来帮我复活。</p>
                 </div>
             </div>
 
@@ -114,6 +130,12 @@
             </div>
 
             <p id="share-status" class="text-xs text-gray-400 mt-4">点击按钮后会优先尝试直接拉起对应 App。</p>
+        </div>
+    </div>
+
+    <div id="modal-final" class="modal">
+        <div class="glass-panel w-11/12 max-w-md p-4 text-center border-yellow-500 border-2">
+            <img src="assets/image3.jpg" alt="最终通关海报" class="w-full h-auto max-h-[78vh] rounded-xl object-contain block">
         </div>
     </div>
 
@@ -234,7 +256,9 @@
             }
         ];
 
-        let curStageIdx = 0, curSubQ = 0, timer, activeQs = [], audioCtx = null;
+        let curStageIdx = 0, curSubQ = 0, timer, activeQs = [], audioCtx = null, stageAdvanceTimer = null;
+        const SHARE_PAGE_URL = 'https://jarry-game.vercel.app/';
+        const SHARE_TEXT = '我卡关了，快来帮我复活，一起逆袭翻盘。';
         const stageVideos = [
             'https://resource.flickai.io/1.mp4',
             'https://resource.flickai.io/2.mp4',
@@ -357,6 +381,7 @@
             const sceneStory = document.getElementById('scene-story');
             const gradientOverlay = document.getElementById('story-gradient-overlay');
             let introShown = false;
+            clearTimeout(stageAdvanceTimer);
 
             function showStageIntro() {
                 if (introShown) return;
@@ -395,6 +420,7 @@
             sceneStory.style.backgroundImage = 'none';
             sceneStory.style.backgroundColor = '#000';
             document.getElementById('modal-share').classList.remove('modal-show');
+            document.getElementById('modal-final').classList.remove('modal-show');
 
             function checkVideoEnd() {
                 if (introShown || storyBgVideo.paused || storyBgVideo.ended) return;
@@ -515,8 +541,10 @@
 
         function runGacha() {
             const data = gameData[curStageIdx];
+            clearTimeout(stageAdvanceTimer);
             clearInterval(timer);
             document.getElementById('modal-share').classList.remove('modal-show');
+            document.getElementById('modal-final').classList.remove('modal-show');
             playSfx('gacha-start');
             ['target1','target2','target3'].forEach((id,i) => setGachaIcon(id, data.gacha.icons[i]));
             ['st1','st2','st3'].forEach(id => { const s = document.getElementById(id); s.style.transform = 'translateY(0)'; s.classList.add('spinning'); });
@@ -536,11 +564,15 @@
                 
                 const nextBtn = document.getElementById('next-stage-btn');
                 if(curStageIdx === 2) {
-                    nextBtn.innerText = "进入 股票交易系统";
+                    nextBtn.classList.add('hidden');
+                    setTimeout(() => document.getElementById('modal-final').classList.add('modal-show'), 700);
                 } else {
                     nextBtn.innerText = "继续改命";
+                    nextBtn.classList.add('hidden');
+                    stageAdvanceTimer = setTimeout(() => {
+                        nextStage();
+                    }, 1800);
                 }
-                nextBtn.classList.remove('hidden'); 
             }, 3500);
         }
 
@@ -561,26 +593,24 @@
         }
 
         function getShareData(platform) {
-            const qrUrl = new URL('qrcode.png', location.href).href;
-            const pageUrl = location.href;
-            const copyText = document.getElementById('share-copy-text').innerText;
-            const fullText = `${copyText} 二维码：${qrUrl}`;
+            const pageUrl = SHARE_PAGE_URL;
+            const lineText = `${SHARE_TEXT}\n${pageUrl}`;
 
             const shareMap = {
                 line: {
                     label: 'LINE',
-                    appUrl: `line://msg/text/${encodeURIComponent(fullText)}`,
-                    webUrl: `https://line.me/R/msg/text/?${encodeURIComponent(fullText)}`
+                    appUrl: `line://msg/text/${encodeURIComponent(lineText)}`,
+                    webUrl: `https://line.me/R/msg/text/?${encodeURIComponent(lineText)}`
                 },
                 facebook: {
                     label: 'Facebook',
-                    appUrl: `fb://facewebmodal/f?href=${encodeURIComponent(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(pageUrl)}&quote=${encodeURIComponent(fullText)}`)}`,
-                    webUrl: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(pageUrl)}&quote=${encodeURIComponent(fullText)}`
+                    appUrl: `fb://facewebmodal/f?href=${encodeURIComponent(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(pageUrl)}`)}`,
+                    webUrl: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(pageUrl)}`
                 },
                 twitter: {
                     label: 'Twitter',
-                    appUrl: `twitter://post?message=${encodeURIComponent(fullText)}`,
-                    webUrl: `https://twitter.com/intent/tweet?text=${encodeURIComponent(fullText)}`
+                    appUrl: `twitter://post?message=${encodeURIComponent(`${SHARE_TEXT} ${pageUrl}`)}`,
+                    webUrl: `https://twitter.com/intent/tweet?text=${encodeURIComponent(SHARE_TEXT)}&url=${encodeURIComponent(pageUrl)}`
                 }
             };
 
